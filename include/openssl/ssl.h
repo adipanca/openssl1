@@ -650,7 +650,11 @@ __owur int SRP_Calc_A_param(SSL *s);
 # endif
 
 /* 100k max cert list */
-# define SSL_MAX_CERT_LIST_DEFAULT 1024*100
+/* OQS note: To support schemes like MQDSS-31-64 and Rainbow,
+ * we have changed this from 102400 to the maximum permissible
+ * value of 2^24 - 1 = 16777215
+ */
+# define SSL_MAX_CERT_LIST_DEFAULT 16777215
 
 # define SSL_SESSION_CACHE_MAX_SIZE_DEFAULT      (1024*20)
 
@@ -1305,6 +1309,7 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 # define SSL_CTRL_GET_MAX_PROTO_VERSION          131
 # define SSL_CTRL_GET_SIGNATURE_NID              132
 # define SSL_CTRL_GET_TMP_KEY                    133
+# define SSL_CTRL_GET_OQS_KEM_CURVE_ID           134
 # define SSL_CTRL_GET_VERIFY_CERT_STORE          137
 # define SSL_CTRL_GET_CHAIN_CERT_STORE           138
 # define SSL_CERT_SET_FIRST                      1
@@ -1463,6 +1468,8 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
         SSL_ctrl(s, SSL_CTRL_GET_MIN_PROTO_VERSION, 0, NULL)
 # define SSL_get_max_proto_version(s) \
         SSL_ctrl(s, SSL_CTRL_GET_MAX_PROTO_VERSION, 0, NULL)
+#define SSL_get_oqs_kem_curve_id(s) \
+        SSL_ctrl(s, SSL_CTRL_GET_OQS_KEM_CURVE_ID, 0, NULL)
 
 /* Backwards compatibility, original 1.1.0 names */
 # define SSL_CTRL_GET_SERVER_TMP_KEY \

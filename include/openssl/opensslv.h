@@ -40,7 +40,7 @@ extern "C" {
  *  major minor fix final patch/beta)
  */
 # define OPENSSL_VERSION_NUMBER  0x10101180L
-# define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1x-dev  xx XXX xxxx"
+# define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1 Kookminlib"
 
 /*-
  * The macros below are to be used for shared library (.so, .dll, ...)

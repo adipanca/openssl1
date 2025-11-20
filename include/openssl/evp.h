@@ -15,6 +15,7 @@
 # include <openssl/symhacks.h>
 # include <openssl/bio.h>
 # include <openssl/evperr.h>
+# include <oqs/oqs.h>
 
 # define EVP_MAX_MD_SIZE                 64/* longest known is SHA512 */
 # define EVP_MAX_KEY_LENGTH              64
@@ -62,6 +63,43 @@
 # define EVP_PKEY_ED25519 NID_ED25519
 # define EVP_PKEY_X448 NID_X448
 # define EVP_PKEY_ED448 NID_ED448
+///// OQS_TEMPLATE_FRAGMENT_DEFINE_EVP_PKEYS_START
+# define EVP_PKEY_DILITHIUM2 NID_dilithium2
+# define EVP_PKEY_P256_DILITHIUM2 NID_p256_dilithium2
+# define EVP_PKEY_RSA3072_DILITHIUM2 NID_rsa3072_dilithium2
+# define EVP_PKEY_DILITHIUM3 NID_dilithium3
+# define EVP_PKEY_P384_DILITHIUM3 NID_p384_dilithium3
+# define EVP_PKEY_DILITHIUM5 NID_dilithium5
+# define EVP_PKEY_P521_DILITHIUM5 NID_p521_dilithium5
+# define EVP_PKEY_FALCON512 NID_falcon512
+# define EVP_PKEY_P256_FALCON512 NID_p256_falcon512
+# define EVP_PKEY_RSA3072_FALCON512 NID_rsa3072_falcon512
+# define EVP_PKEY_FALCON1024 NID_falcon1024
+# define EVP_PKEY_P521_FALCON1024 NID_p521_falcon1024
+# define EVP_PKEY_SPHINCSSHA2128FSIMPLE NID_sphincssha2128fsimple
+# define EVP_PKEY_P256_SPHINCSSHA2128FSIMPLE NID_p256_sphincssha2128fsimple
+# define EVP_PKEY_RSA3072_SPHINCSSHA2128FSIMPLE NID_rsa3072_sphincssha2128fsimple
+# define EVP_PKEY_SPHINCSSHA2128SSIMPLE NID_sphincssha2128ssimple
+# define EVP_PKEY_P256_SPHINCSSHA2128SSIMPLE NID_p256_sphincssha2128ssimple
+# define EVP_PKEY_RSA3072_SPHINCSSHA2128SSIMPLE NID_rsa3072_sphincssha2128ssimple
+# define EVP_PKEY_SPHINCSSHA2192FSIMPLE NID_sphincssha2192fsimple
+# define EVP_PKEY_P384_SPHINCSSHA2192FSIMPLE NID_p384_sphincssha2192fsimple
+# define EVP_PKEY_SPHINCSSHAKE128FSIMPLE NID_sphincsshake128fsimple
+# define EVP_PKEY_P256_SPHINCSSHAKE128FSIMPLE NID_p256_sphincsshake128fsimple
+# define EVP_PKEY_RSA3072_SPHINCSSHAKE128FSIMPLE NID_rsa3072_sphincsshake128fsimple
+#define OQS_OPENSSL_SIG_algs_length 23
+#define OQS_OPENSSL_KEM_algs_length 15
+// #define OQS_OPENSSL_KEM_algs_length 19
+#define IS_OQS_OPENSSL_KEM_NID(a) ((a >= 0x01FF) && (a <= NID_p521_hqc256))
+#define IS_OQS_OPENSSL_SIG_NID(a) ((a >= NID_dilithium2) && (a <= NID_rsa3072_sphincsshake128fsimple))
+/////// OQS_TEMPLATE_FRAGMENT_DEFINE_EVP_PKEYS_END
+const char *OQSKEM_options(void);
+const char *OQSSIG_options(void);
+int oqs_size(const EVP_PKEY *pkey);
+int* get_oqssl_sig_nids(void);
+int* get_oqssl_kem_nids(void);
+char* get_oqs_alg_name(int openssl_nid);
+
 
 #ifdef  __cplusplus
 extern "C" {

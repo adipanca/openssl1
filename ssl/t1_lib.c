@@ -20,6 +20,18 @@
 #include "internal/nelem.h"
 #include "ssl_local.h"
 #include <openssl/ct.h>
+#include <oqs/oqs.h>
+
+static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey);
+
+static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey);
+static int tls12_sigalg_allowed(const SSL *s, int op, const SIGALG_LOOKUP *lu);
+
+static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey);
+static int tls12_sigalg_allowed(const SSL *s, int op, const SIGALG_LOOKUP *lu);
+
+static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey);
+static int tls12_sigalg_allowed(const SSL *s, int op, const SIGALG_LOOKUP *lu);
 
 static const SIGALG_LOOKUP *find_sig_alg(SSL *s, X509 *x, EVP_PKEY *pkey);
 static int tls12_sigalg_allowed(const SSL *s, int op, const SIGALG_LOOKUP *lu);
@@ -171,6 +183,52 @@ static const TLS_GROUP_INFO nid_list[] = {
     {EVP_PKEY_X448, 224, TLS_CURVE_CUSTOM}, /* X448 (30) */
 };
 
+/* OQS groups. The values are arbitraty, since the TLS spec does not specify values for non finite field and elliptic curve "groups". Security level is classical.
+ */
+static const TLS_GROUP_INFO oqs_nid_list[] = {
+///// OQS_TEMPLATE_FRAGMENT_OQS_NID_LIST_START
+    {NID_frodo640aes, 128, TLS_CURVE_CUSTOM}, /* frodo640aes (0x0200) */
+    {NID_frodo640shake, 128, TLS_CURVE_CUSTOM}, /* frodo640shake (0x0201) */
+    {NID_frodo976aes, 192, TLS_CURVE_CUSTOM}, /* frodo976aes (0x0202) */
+    {NID_frodo976shake, 192, TLS_CURVE_CUSTOM}, /* frodo976shake (0x0203) */
+    {NID_frodo1344aes, 256, TLS_CURVE_CUSTOM}, /* frodo1344aes (0x0204) */
+    {NID_frodo1344shake, 256, TLS_CURVE_CUSTOM}, /* frodo1344shake (0x0205) */
+    {NID_kyber512, 128, TLS_CURVE_CUSTOM}, /* kyber512 (0x023A) */
+    {NID_kyber768, 192, TLS_CURVE_CUSTOM}, /* kyber768 (0x023C) */
+    {NID_kyber1024, 256, TLS_CURVE_CUSTOM}, /* kyber1024 (0x023D) */
+    {NID_mlkem512, 128, TLS_CURVE_CUSTOM}, /* mlkem512 (0x0247) */
+    {NID_mlkem768, 192, TLS_CURVE_CUSTOM}, /* mlkem768 (0x0248) */
+    {NID_mlkem1024, 256, TLS_CURVE_CUSTOM}, /* mlkem1024 (0x0249) */
+    {NID_bikel1, 128, TLS_CURVE_CUSTOM}, /* bikel1 (0x0241) */
+    {NID_bikel3, 192, TLS_CURVE_CUSTOM}, /* bikel3 (0x0242) */
+    {NID_bikel5, 256, TLS_CURVE_CUSTOM}, /* bikel5 (0x0243) */
+    {NID_hqc128, 128, TLS_CURVE_CUSTOM}, /* hqc128 (0x022C) */
+    {NID_hqc192, 192, TLS_CURVE_CUSTOM}, /* hqc192 (0x022D) */
+    {NID_hqc256, 256, TLS_CURVE_CUSTOM}, /* hqc256 (0x022E) */
+///// OQS_TEMPLATE_FRAGMENT_OQS_NID_LIST_END
+};
+    /* Hybrid OQS groups. Security level is classical. */
+static const TLS_GROUP_INFO oqs_hybrid_nid_list[] = {
+///// OQS_TEMPLATE_FRAGMENT_OQS_NID_LIST_HYBRID_START
+ {NID_p256_frodo640aes, 128, TLS_CURVE_CUSTOM}, /* p256/384/521 + frodo640aes hybrid (0x0200) */
+ {NID_p256_frodo640shake, 128, TLS_CURVE_CUSTOM}, /* p256/384/521 + frodo640shake hybrid (0x0201) */
+ {NID_p384_frodo976aes, 192, TLS_CURVE_CUSTOM}, /* p256/384/521 + frodo976aes hybrid (0x0202) */
+ {NID_p384_frodo976shake, 192, TLS_CURVE_CUSTOM}, /* p256/384/521 + frodo976shake hybrid (0x0203) */
+ {NID_p521_frodo1344aes, 256, TLS_CURVE_CUSTOM}, /* p256/384/521 + frodo1344aes hybrid (0x0204) */
+ {NID_p521_frodo1344shake, 256, TLS_CURVE_CUSTOM}, /* p256/384/521 + frodo1344shake hybrid (0x0205) */
+ {NID_p256_kyber512, 128, TLS_CURVE_CUSTOM}, /* p256/384/521 + kyber512 hybrid (0x023A) */
+ {NID_p384_kyber768, 192, TLS_CURVE_CUSTOM}, /* p256/384/521 + kyber768 hybrid (0x023C) */
+ {NID_p521_kyber1024, 256, TLS_CURVE_CUSTOM}, /* p256/384/521 + kyber1024 hybrid (0x023D) */
+ {NID_X25519MLKEM768, 192, TLS_CURVE_CUSTOM}, /* X25519MLKEM768 hybrid (0x11ec) */
+ {NID_p256_bikel1, 128, TLS_CURVE_CUSTOM}, /* p256/384/521 + bikel1 hybrid (0x0241) */
+ {NID_p384_bikel3, 192, TLS_CURVE_CUSTOM}, /* p256/384/521 + bikel3 hybrid (0x0242) */
+ {NID_p521_bikel5, 256, TLS_CURVE_CUSTOM}, /* p256/384/521 + bikel5 hybrid (0x0243) */
+ {NID_p256_hqc128, 128, TLS_CURVE_CUSTOM}, /* p256/384/521 + hqc128 hybrid (0x022C) */
+ {NID_p384_hqc192, 192, TLS_CURVE_CUSTOM}, /* p256/384/521 + hqc192 hybrid (0x022D) */
+ {NID_p521_hqc256, 256, TLS_CURVE_CUSTOM}, /* p256/384/521 + hqc256 hybrid (0x022E) */
+///// OQS_TEMPLATE_FRAGMENT_OQS_NID_LIST_HYBRID_END
+};
+
 static const unsigned char ecformats_default[] = {
     TLSEXT_ECPOINTFORMAT_uncompressed,
     TLSEXT_ECPOINTFORMAT_ansiX962_compressed_prime,
@@ -184,6 +242,66 @@ static const uint16_t eccurves_default[] = {
     30,                      /* X448 (30) */
     25,                      /* secp521r1 (25) */
     24,                      /* secp384r1 (24) */
+///// OQS_TEMPLATE_FRAGMENT_ECCURVES_DEFAULT_HYBRID_START
+    0x2F00, /* OQS frodo640aes hybrid */
+    0x2F01, /* OQS frodo640shake hybrid */
+    0x2F3A, /* OQS kyber512 hybrid */
+    0x11ec, /* OQS X25519MLKEM768 hybrid */
+    0x2F41, /* OQS bikel1 hybrid */
+    0x2F2C, /* OQS hqc128 hybrid */
+///// OQS_TEMPLATE_FRAGMENT_ECCURVES_DEFAULT_HYBRID_END
+};
+
+static uint16_t *oqsgroups_default = NULL;
+static size_t oqsgroups_default_len = -1; // indicates missing initialization
+
+/* OQS note: We introduced this list for use
+ * by oqs_tls13_get_server_supported_groups(). See that
+ * function's documentation in ssl_local.h
+ * for the explanation.
+ */
+static const uint16_t oqs_all_tls13_server_groups[] = {
+    29,                      /* X25519 (29) */
+    23,                      /* secp256r1 (23) */
+    30,                      /* X448 (30) */
+    25,                      /* secp521r1 (25) */
+    24,                      /* secp384r1 (24) */
+///// OQS_TEMPLATE_FRAGMENT_ALL_OQS_CURVEIDS_START
+    0x0200, /* frodo640aes */
+    0x2F00, /* OQS frodo640aes hybrid */
+    0x0201, /* frodo640shake */
+    0x2F01, /* OQS frodo640shake hybrid */
+    0x0202, /* frodo976aes */
+    0x2F02, /* OQS frodo976aes hybrid */
+    0x0203, /* frodo976shake */
+    0x2F03, /* OQS frodo976shake hybrid */
+    0x0204, /* frodo1344aes */
+    0x2F04, /* OQS frodo1344aes hybrid */
+    0x0205, /* frodo1344shake */
+    0x2F05, /* OQS frodo1344shake hybrid */
+    0x023A, /* kyber512 */
+    0x2F3A, /* OQS kyber512 hybrid */
+    0x023C, /* kyber768 */
+    0x2F3C, /* OQS kyber768 hybrid */
+    0x023D, /* kyber1024 */
+    0x2F3D, /* OQS kyber1024 hybrid */
+    0x0247, /* mlkem512 */
+    0x0248, /* mlkem768 */
+    0x0249, /* mlkem1024 */
+    0x11ec, /* X25519MLKEM768 */
+    0x0241, /* bikel1 */
+    0x2F41, /* OQS bikel1 hybrid */
+    0x0242, /* bikel3 */
+    0x2F42, /* OQS bikel3 hybrid */
+    0x0243, /* bikel5 */
+    0x2F43, /* OQS bikel5 hybrid */
+    0x022C, /* hqc128 */
+    0x2F2C, /* OQS hqc128 hybrid */
+    0x022D, /* hqc192 */
+    0x2F2D, /* OQS hqc192 hybrid */
+    0x022E, /* hqc256 */
+    0x2F2E, /* OQS hqc256 hybrid */
+///// OQS_TEMPLATE_FRAGMENT_ALL_OQS_CURVEIDS_END
 };
 
 static const uint16_t suiteb_curves[] = {
@@ -193,11 +311,47 @@ static const uint16_t suiteb_curves[] = {
 
 const TLS_GROUP_INFO *tls1_group_id_lookup(uint16_t group_id)
 {
+    size_t i;
+    /* check if it is an OQS group */
+    if (IS_OQS_KEM_CURVEID(group_id)) {
+        int oqs_nid = OQS_KEM_NID(group_id);
+        for (i = 0; i < OSSL_NELEM(oqs_nid_list); i++) {
+            if (oqs_nid_list[i].nid == oqs_nid) {
+                return &oqs_nid_list[i];
+            }
+        }
+    }
+    if (IS_OQS_KEM_HYBRID_CURVEID(group_id)) {
+        int oqs_nid = OQS_HYBRID_KEM_NID(group_id);
+        // for (i = 0; i < OSSL_NELEM(oqs_nid_list); i++) {
+        //     if (oqs_hybrid_nid_list[i].nid == oqs_nid) {
+        //         return &oqs_hybrid_nid_list[i];
+        //     }
+        // }
+        for (i = 0; i < OSSL_NELEM(oqs_hybrid_nid_list); i++) {
+            if (oqs_hybrid_nid_list[i].nid == oqs_nid) {
+                // fprintf(stderr, "HYBRID lookup OK: gid=0x%04x -> nid=%d\n", group_id, oqs_nid);
+                return &oqs_hybrid_nid_list[i];
+            }
+        }
+    }
+
     /* ECC curves from RFC 4492 and RFC 7027 */
     if (group_id < 1 || group_id > OSSL_NELEM(nid_list))
         return NULL;
     return &nid_list[group_id - 1];
+        /* Klasik (termasuk X25519=29, X448=30) — JANGAN pakai index id-1 */
+    // for (i = 0; i < OSSL_NELEM(nid_list); i++)
+    //     if (nid_list[i].group_id == group_id)
+    //         return &nid_list[i];
+
+    // return NULL;
 }
+
+# define MAX_CURVELIST   (OSSL_NELEM(nid_list) + \
+                          OSSL_NELEM(oqs_nid_list) + \
+                          OSSL_NELEM(oqs_hybrid_nid_list))
+
 
 static uint16_t tls1_nid2group_id(int nid)
 {
@@ -206,7 +360,27 @@ static uint16_t tls1_nid2group_id(int nid)
         if (nid_list[i].nid == nid)
             return (uint16_t)(i + 1);
     }
+    for (; i < OSSL_NELEM(nid_list)+OSSL_NELEM(oqs_nid_list); i++) {
+        if (oqs_nid_list[i-OSSL_NELEM(nid_list)].nid == nid)
+            return (uint16_t)(i + 1);
+    }
+    for (; i < MAX_CURVELIST; i++) {
+        if (oqs_hybrid_nid_list[i-(OSSL_NELEM(nid_list)+OSSL_NELEM(oqs_nid_list))].nid == nid)
+            return (uint16_t)(i + 1);
+    }
     return 0;
+}
+
+void oqs_tls13_get_server_supported_groups(SSL *s, const uint16_t **pgroups,
+                                           size_t *pgroupslen)
+{
+    if (s->ext.supportedgroups == NULL) {
+        *pgroups = oqs_all_tls13_server_groups;
+        *pgroupslen = OSSL_NELEM(oqs_all_tls13_server_groups);
+    } else {
+        *pgroups = s->ext.supportedgroups;
+        *pgroupslen = s->ext.supportedgroups_len;
+    }
 }
 
 /*
@@ -236,8 +410,40 @@ void tls1_get_supported_groups(SSL *s, const uint16_t **pgroups,
 
     default:
         if (s->ext.supportedgroups == NULL) {
-            *pgroups = eccurves_default;
-            *pgroupslen = OSSL_NELEM(eccurves_default);
+#ifndef OQS_DEFAULT_GROUPS
+            if (getenv("TLS_DEFAULT_GROUPS")) {
+                if (!tls1_set_groups_list((uint16_t **)&oqsgroups_default, &oqsgroups_default_len, getenv("TLS_DEFAULT_GROUPS"))) {
+                    fprintf(stderr, "Failed to set default curves to '%s'. Falling back to default ECcurves.\n", getenv("TLS_DEFAULT_GROUPS"));
+                    oqsgroups_default_len = 0;
+                }
+            }
+            if ((oqsgroups_default_len == 0) || (oqsgroups_default_len == -1)) {
+                *pgroups = eccurves_default;
+                *pgroupslen = OSSL_NELEM(eccurves_default);
+            }
+            else {
+                *pgroups = oqsgroups_default;
+                *pgroupslen = oqsgroups_default_len;
+            }
+#else
+#define STRINGIZE(x) #x
+#define STRINGIZE_VALUE_OF(x) STRINGIZE(x)
+            // Only set OQS_DEFAULT_GROUPS if running TLS1.3:
+            if (SSL_IS_TLS13(s) && (oqsgroups_default_len == -1)) { // initialization required
+                if (!tls1_set_groups_list((uint16_t **)&oqsgroups_default, &oqsgroups_default_len, strdup(STRINGIZE_VALUE_OF(OQS_DEFAULT_GROUPS)))) {
+                    fprintf(stderr, "Failed to set default curves to '%s'. Falling back to default ECcurves.\n", STRINGIZE_VALUE_OF(OQS_DEFAULT_GROUPS));
+                    oqsgroups_default_len = 0;
+                }
+            }
+            if (SSL_IS_TLS13(s) && (oqsgroups_default_len > 0)) {
+                   *pgroups = oqsgroups_default;
+                   *pgroupslen = oqsgroups_default_len;
+                }
+            else {
+               *pgroups = eccurves_default;
+               *pgroupslen = OSSL_NELEM(eccurves_default);
+            }
+#endif
         } else {
             *pgroups = s->ext.supportedgroups;
             *pgroupslen = s->ext.supportedgroups_len;
@@ -344,7 +550,6 @@ int tls1_set_groups(uint16_t **pext, size_t *pextlen,
      * Bitmap of groups included to detect duplicates: only works while group
      * ids < 32
      */
-    unsigned long dup_list = 0;
 
     if (ngroups == 0) {
         SSLerr(SSL_F_TLS1_SET_GROUPS, SSL_R_BAD_LENGTH);
@@ -354,26 +559,30 @@ int tls1_set_groups(uint16_t **pext, size_t *pextlen,
         SSLerr(SSL_F_TLS1_SET_GROUPS, ERR_R_MALLOC_FAILURE);
         return 0;
     }
+    uint16_t dup_list[MAX_CURVELIST];
+    memset(dup_list,0,sizeof(dup_list));
     for (i = 0; i < ngroups; i++) {
-        unsigned long idmask;
         uint16_t id;
         /* TODO(TLS1.3): Convert for DH groups */
         id = tls1_nid2group_id(groups[i]);
-        idmask = 1L << id;
-        if (!id || (dup_list & idmask)) {
+        if (!id || dup_list[(id-1)]) {
             OPENSSL_free(glist);
             return 0;
         }
-        dup_list |= idmask;
+        dup_list[(id-1)] = i;
         glist[i] = id;
+        int oqs_group_id = OQS_KEM_CURVEID(groups[i]);
+        if (oqs_group_id != 0)
+            glist[i] = oqs_group_id;
+        oqs_group_id = OQS_KEM_HYBRID_CURVEID(groups[i]);
+        if (oqs_group_id != 0)
+            glist[i] = oqs_group_id;
     }
     OPENSSL_free(*pext);
     *pext = glist;
     *pextlen = ngroups;
     return 1;
 }
-
-# define MAX_CURVELIST   OSSL_NELEM(nid_list)
 
 typedef struct {
     size_t nidcnt;
@@ -385,7 +594,7 @@ static int nid_cb(const char *elem, int len, void *arg)
     nid_cb_st *narg = arg;
     size_t i;
     int nid;
-    char etmp[20];
+    char etmp[40]; // OQS note: used to be 20, but some OQS are bigger
     if (elem == NULL)
         return 0;
     if (narg->nidcnt == MAX_CURVELIST)
@@ -395,10 +604,17 @@ static int nid_cb(const char *elem, int len, void *arg)
     memcpy(etmp, elem, len);
     etmp[len] = 0;
     nid = EC_curve_nist2nid(etmp);
-    if (nid == NID_undef)
+    if (nid == NID_undef) {
         nid = OBJ_sn2nid(etmp);
-    if (nid == NID_undef)
+        if (nid != NID_undef) { // also OQS names would be found here, so test for enablement; std curves will only be found by ln2nid below
+             char* oqs_name = get_oqs_alg_name(nid);
+             if (oqs_name && !OQS_KEM_alg_is_enabled(oqs_name)) fprintf(stderr, "Warning: Algorithm '%s' is not enabled in liboqs. \n", etmp);
+        }
+    }
+    if (nid == NID_undef) {
         nid = OBJ_ln2nid(etmp);
+        if (nid == NID_undef) fprintf(stderr, "Warning: Algorithm name '%s' unknown. Check https://github.com/open-quantum-safe/openssl#supported-algorithms\n", etmp);
+    }
     if (nid == NID_undef)
         return 0;
     for (i = 0; i < narg->nidcnt; i++)
@@ -643,6 +859,31 @@ static const uint16_t tls12_sigalgs[] = {
     TLSEXT_SIGALG_ed25519,
     TLSEXT_SIGALG_ed448,
 #endif
+///// OQS_TEMPLATE_FRAGMENT_DEFINE_TLS12_SIGALGS_START
+    TLSEXT_SIGALG_dilithium2,
+    TLSEXT_SIGALG_p256_dilithium2,
+    TLSEXT_SIGALG_rsa3072_dilithium2,
+    TLSEXT_SIGALG_dilithium3,
+    TLSEXT_SIGALG_p384_dilithium3,
+    TLSEXT_SIGALG_dilithium5,
+    TLSEXT_SIGALG_p521_dilithium5,
+    TLSEXT_SIGALG_falcon512,
+    TLSEXT_SIGALG_p256_falcon512,
+    TLSEXT_SIGALG_rsa3072_falcon512,
+    TLSEXT_SIGALG_falcon1024,
+    TLSEXT_SIGALG_p521_falcon1024,
+    TLSEXT_SIGALG_sphincssha2128fsimple,
+    TLSEXT_SIGALG_p256_sphincssha2128fsimple,
+    TLSEXT_SIGALG_rsa3072_sphincssha2128fsimple,
+    TLSEXT_SIGALG_sphincssha2128ssimple,
+    TLSEXT_SIGALG_p256_sphincssha2128ssimple,
+    TLSEXT_SIGALG_rsa3072_sphincssha2128ssimple,
+    TLSEXT_SIGALG_sphincssha2192fsimple,
+    TLSEXT_SIGALG_p384_sphincssha2192fsimple,
+    TLSEXT_SIGALG_sphincsshake128fsimple,
+    TLSEXT_SIGALG_p256_sphincsshake128fsimple,
+    TLSEXT_SIGALG_rsa3072_sphincsshake128fsimple,
+///// OQS_TEMPLATE_FRAGMENT_DEFINE_TLS12_SIGALGS_END
 
     TLSEXT_SIGALG_rsa_pss_pss_sha256,
     TLSEXT_SIGALG_rsa_pss_pss_sha384,
@@ -769,8 +1010,79 @@ static const SIGALG_LOOKUP sigalg_lookup_tbl[] = {
     {NULL, TLSEXT_SIGALG_gostr34102001_gostr3411,
      NID_id_GostR3411_94, SSL_MD_GOST94_IDX,
      NID_id_GostR3410_2001, SSL_PKEY_GOST01,
-     NID_undef, NID_undef}
+     NID_undef, NID_undef},
 #endif
+///// OQS_TEMPLATE_FRAGMENT_POPULATE_SIGALG_TBL_START
+    {"dilithium2", TLSEXT_SIGALG_dilithium2,
+     NID_undef, -1, EVP_PKEY_DILITHIUM2, SSL_PKEY_DILITHIUM2,
+     NID_undef, NID_undef},
+    {"p256_dilithium2", TLSEXT_SIGALG_p256_dilithium2,
+     NID_undef, -1, EVP_PKEY_P256_DILITHIUM2, SSL_PKEY_P256_DILITHIUM2,
+     NID_undef, NID_undef},
+    {"rsa3072_dilithium2", TLSEXT_SIGALG_rsa3072_dilithium2,
+     NID_undef, -1, EVP_PKEY_RSA3072_DILITHIUM2, SSL_PKEY_RSA3072_DILITHIUM2,
+     NID_undef, NID_undef},
+    {"dilithium3", TLSEXT_SIGALG_dilithium3,
+     NID_undef, -1, EVP_PKEY_DILITHIUM3, SSL_PKEY_DILITHIUM3,
+     NID_undef, NID_undef},
+    {"p384_dilithium3", TLSEXT_SIGALG_p384_dilithium3,
+     NID_undef, -1, EVP_PKEY_P384_DILITHIUM3, SSL_PKEY_P384_DILITHIUM3,
+     NID_undef, NID_undef},
+    {"dilithium5", TLSEXT_SIGALG_dilithium5,
+     NID_undef, -1, EVP_PKEY_DILITHIUM5, SSL_PKEY_DILITHIUM5,
+     NID_undef, NID_undef},
+    {"p521_dilithium5", TLSEXT_SIGALG_p521_dilithium5,
+     NID_undef, -1, EVP_PKEY_P521_DILITHIUM5, SSL_PKEY_P521_DILITHIUM5,
+     NID_undef, NID_undef},
+    {"falcon512", TLSEXT_SIGALG_falcon512,
+     NID_undef, -1, EVP_PKEY_FALCON512, SSL_PKEY_FALCON512,
+     NID_undef, NID_undef},
+    {"p256_falcon512", TLSEXT_SIGALG_p256_falcon512,
+     NID_undef, -1, EVP_PKEY_P256_FALCON512, SSL_PKEY_P256_FALCON512,
+     NID_undef, NID_undef},
+    {"rsa3072_falcon512", TLSEXT_SIGALG_rsa3072_falcon512,
+     NID_undef, -1, EVP_PKEY_RSA3072_FALCON512, SSL_PKEY_RSA3072_FALCON512,
+     NID_undef, NID_undef},
+    {"falcon1024", TLSEXT_SIGALG_falcon1024,
+     NID_undef, -1, EVP_PKEY_FALCON1024, SSL_PKEY_FALCON1024,
+     NID_undef, NID_undef},
+    {"p521_falcon1024", TLSEXT_SIGALG_p521_falcon1024,
+     NID_undef, -1, EVP_PKEY_P521_FALCON1024, SSL_PKEY_P521_FALCON1024,
+     NID_undef, NID_undef},
+    {"sphincssha2128fsimple", TLSEXT_SIGALG_sphincssha2128fsimple,
+     NID_undef, -1, EVP_PKEY_SPHINCSSHA2128FSIMPLE, SSL_PKEY_SPHINCSSHA2128FSIMPLE,
+     NID_undef, NID_undef},
+    {"p256_sphincssha2128fsimple", TLSEXT_SIGALG_p256_sphincssha2128fsimple,
+     NID_undef, -1, EVP_PKEY_P256_SPHINCSSHA2128FSIMPLE, SSL_PKEY_P256_SPHINCSSHA2128FSIMPLE,
+     NID_undef, NID_undef},
+    {"rsa3072_sphincssha2128fsimple", TLSEXT_SIGALG_rsa3072_sphincssha2128fsimple,
+     NID_undef, -1, EVP_PKEY_RSA3072_SPHINCSSHA2128FSIMPLE, SSL_PKEY_RSA3072_SPHINCSSHA2128FSIMPLE,
+     NID_undef, NID_undef},
+    {"sphincssha2128ssimple", TLSEXT_SIGALG_sphincssha2128ssimple,
+     NID_undef, -1, EVP_PKEY_SPHINCSSHA2128SSIMPLE, SSL_PKEY_SPHINCSSHA2128SSIMPLE,
+     NID_undef, NID_undef},
+    {"p256_sphincssha2128ssimple", TLSEXT_SIGALG_p256_sphincssha2128ssimple,
+     NID_undef, -1, EVP_PKEY_P256_SPHINCSSHA2128SSIMPLE, SSL_PKEY_P256_SPHINCSSHA2128SSIMPLE,
+     NID_undef, NID_undef},
+    {"rsa3072_sphincssha2128ssimple", TLSEXT_SIGALG_rsa3072_sphincssha2128ssimple,
+     NID_undef, -1, EVP_PKEY_RSA3072_SPHINCSSHA2128SSIMPLE, SSL_PKEY_RSA3072_SPHINCSSHA2128SSIMPLE,
+     NID_undef, NID_undef},
+    {"sphincssha2192fsimple", TLSEXT_SIGALG_sphincssha2192fsimple,
+     NID_undef, -1, EVP_PKEY_SPHINCSSHA2192FSIMPLE, SSL_PKEY_SPHINCSSHA2192FSIMPLE,
+     NID_undef, NID_undef},
+    {"p384_sphincssha2192fsimple", TLSEXT_SIGALG_p384_sphincssha2192fsimple,
+     NID_undef, -1, EVP_PKEY_P384_SPHINCSSHA2192FSIMPLE, SSL_PKEY_P384_SPHINCSSHA2192FSIMPLE,
+     NID_undef, NID_undef},
+    {"sphincsshake128fsimple", TLSEXT_SIGALG_sphincsshake128fsimple,
+     NID_undef, -1, EVP_PKEY_SPHINCSSHAKE128FSIMPLE, SSL_PKEY_SPHINCSSHAKE128FSIMPLE,
+     NID_undef, NID_undef},
+    {"p256_sphincsshake128fsimple", TLSEXT_SIGALG_p256_sphincsshake128fsimple,
+     NID_undef, -1, EVP_PKEY_P256_SPHINCSSHAKE128FSIMPLE, SSL_PKEY_P256_SPHINCSSHAKE128FSIMPLE,
+     NID_undef, NID_undef},
+    {"rsa3072_sphincsshake128fsimple", TLSEXT_SIGALG_rsa3072_sphincsshake128fsimple,
+     NID_undef, -1, EVP_PKEY_RSA3072_SPHINCSSHAKE128FSIMPLE, SSL_PKEY_RSA3072_SPHINCSSHAKE128FSIMPLE,
+     NID_undef, NID_undef},
+///// OQS_TEMPLATE_FRAGMENT_POPULATE_SIGALG_TBL_END
 };
 /* Legacy sigalgs for TLS < 1.2 RSA TLS signatures */
 static const SIGALG_LOOKUP legacy_rsa_sigalg = {
@@ -1012,6 +1324,54 @@ static int sigalg_security_bits(const SIGALG_LOOKUP *lu)
             secbits = 128;
         else if (lu->sigalg == TLSEXT_SIGALG_ed448)
             secbits = 224;
+///// OQS_TEMPLATE_FRAGMENT_MAP_SIGALG_TO_BIT_SECURITY_START
+        else if(lu->sigalg == TLSEXT_SIGALG_dilithium2)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_p256_dilithium2)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_rsa3072_dilithium2)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_dilithium3)
+            secbits = 192;
+        else if(lu->sigalg == TLSEXT_SIGALG_p384_dilithium3)
+            secbits = 192;
+        else if(lu->sigalg == TLSEXT_SIGALG_dilithium5)
+            secbits = 256;
+        else if(lu->sigalg == TLSEXT_SIGALG_p521_dilithium5)
+            secbits = 256;
+        else if(lu->sigalg == TLSEXT_SIGALG_falcon512)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_p256_falcon512)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_rsa3072_falcon512)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_falcon1024)
+            secbits = 256;
+        else if(lu->sigalg == TLSEXT_SIGALG_p521_falcon1024)
+            secbits = 256;
+        else if(lu->sigalg == TLSEXT_SIGALG_sphincssha2128fsimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_p256_sphincssha2128fsimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_rsa3072_sphincssha2128fsimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_sphincssha2128ssimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_p256_sphincssha2128ssimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_rsa3072_sphincssha2128ssimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_sphincssha2192fsimple)
+            secbits = 192;
+        else if(lu->sigalg == TLSEXT_SIGALG_p384_sphincssha2192fsimple)
+            secbits = 192;
+        else if(lu->sigalg == TLSEXT_SIGALG_sphincsshake128fsimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_p256_sphincsshake128fsimple)
+            secbits = 128;
+        else if(lu->sigalg == TLSEXT_SIGALG_rsa3072_sphincsshake128fsimple)
+            secbits = 128;
+///// OQS_TEMPLATE_FRAGMENT_MAP_SIGALG_TO_BIT_SECURITY_END
     }
     return secbits;
 }
@@ -1682,8 +2042,8 @@ void ssl_set_sig_mask(uint32_t *pmask_a, SSL *s, int op)
             continue;
 
         clu = ssl_cert_lookup_by_idx(lu->sig_idx);
-	if (clu == NULL)
-		continue;
+        if (clu == NULL)
+                continue;
 
         /* If algorithm is disabled see if we can enable it */
         if ((clu->amask & disabled_mask) != 0
@@ -2426,6 +2786,31 @@ void tls1_set_cert_validity(SSL *s)
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_GOST12_512);
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_ED25519);
     tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_ED448);
+///// OQS_TEMPLATE_FRAGMENT_ADD_CERT_CHAIN_CHECKS_START
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_DILITHIUM2);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P256_DILITHIUM2);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA3072_DILITHIUM2);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_DILITHIUM3);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P384_DILITHIUM3);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_DILITHIUM5);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P521_DILITHIUM5);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_FALCON512);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P256_FALCON512);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA3072_FALCON512);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_FALCON1024);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P521_FALCON1024);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SPHINCSSHA2128FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P256_SPHINCSSHA2128FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA3072_SPHINCSSHA2128FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SPHINCSSHA2128SSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P256_SPHINCSSHA2128SSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA3072_SPHINCSSHA2128SSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SPHINCSSHA2192FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P384_SPHINCSSHA2192FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_SPHINCSSHAKE128FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_P256_SPHINCSSHAKE128FSIMPLE);
+    tls1_check_chain(s, NULL, NULL, NULL, SSL_PKEY_RSA3072_SPHINCSSHAKE128FSIMPLE);
+///// OQS_TEMPLATE_FRAGMENT_ADD_CERT_CHAIN_CHECKS_END
 }
 
 /* User level utility function to check a chain is suitable */

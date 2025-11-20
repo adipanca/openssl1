@@ -20,6 +20,7 @@
 #ifndef OPENSSL_NO_DH
 # include <openssl/dh.h>
 #endif
+#include <oqs/oqs.h>
 #include "s_apps.h"
 
 #define COOKIE_SECRET_LENGTH    16
@@ -232,24 +233,72 @@ static const char *get_sigtype(int nid)
     case EVP_PKEY_DSA:
         return "DSA";
 
-     case EVP_PKEY_EC:
+    case EVP_PKEY_EC:
         return "ECDSA";
 
-     case NID_ED25519:
+    case NID_ED25519:
         return "Ed25519";
 
-     case NID_ED448:
+    case NID_ED448:
         return "Ed448";
 
-     case NID_id_GostR3410_2001:
+    case NID_id_GostR3410_2001:
         return "gost2001";
 
-     case NID_id_GostR3410_2012_256:
+    case NID_id_GostR3410_2012_256:
         return "gost2012_256";
 
-     case NID_id_GostR3410_2012_512:
+    case NID_id_GostR3410_2012_512:
         return "gost2012_512";
 
+///// OQS_TEMPLATE_FRAGMENT_SIG_NAME_STR_START
+    case NID_dilithium2:
+        return "Dilithium2";
+    case NID_p256_dilithium2:
+        return "ECDSA p256 - Dilithium2";
+    case NID_rsa3072_dilithium2:
+        return "RSA3072 - Dilithium2";
+    case NID_dilithium3:
+        return "Dilithium3";
+    case NID_p384_dilithium3:
+        return "ECDSA p384 - Dilithium3";
+    case NID_dilithium5:
+        return "Dilithium5";
+    case NID_p521_dilithium5:
+        return "ECDSA p521 - Dilithium5";
+    case NID_falcon512:
+        return "Falcon-512";
+    case NID_p256_falcon512:
+        return "ECDSA p256 - Falcon-512";
+    case NID_rsa3072_falcon512:
+        return "RSA3072 - Falcon-512";
+    case NID_falcon1024:
+        return "Falcon-1024";
+    case NID_p521_falcon1024:
+        return "ECDSA p521 - Falcon-1024";
+    case NID_sphincssha2128fsimple:
+        return "SPHINCS+-SHA2-128f-simple";
+    case NID_p256_sphincssha2128fsimple:
+        return "ECDSA p256 - SPHINCS+-SHA2-128f-simple";
+    case NID_rsa3072_sphincssha2128fsimple:
+        return "RSA3072 - SPHINCS+-SHA2-128f-simple";
+    case NID_sphincssha2128ssimple:
+        return "SPHINCS+-SHA2-128s-simple";
+    case NID_p256_sphincssha2128ssimple:
+        return "ECDSA p256 - SPHINCS+-SHA2-128s-simple";
+    case NID_rsa3072_sphincssha2128ssimple:
+        return "RSA3072 - SPHINCS+-SHA2-128s-simple";
+    case NID_sphincssha2192fsimple:
+        return "SPHINCS+-SHA2-192f-simple";
+    case NID_p384_sphincssha2192fsimple:
+        return "ECDSA p384 - SPHINCS+-SHA2-192f-simple";
+    case NID_sphincsshake128fsimple:
+        return "SPHINCS+-SHAKE-128f-simple";
+    case NID_p256_sphincsshake128fsimple:
+        return "ECDSA p256 - SPHINCS+-SHAKE-128f-simple";
+    case NID_rsa3072_sphincsshake128fsimple:
+        return "RSA3072 - SPHINCS+-SHAKE-128f-simple";
+///// OQS_TEMPLATE_FRAGMENT_SIG_NAME_STR_END
     default:
         return NULL;
     }
@@ -398,14 +447,68 @@ int ssl_print_groups(BIO *out, SSL *s, int noshared)
 }
 #endif
 
+/* OQS note: is there a better place to put this? we only need it here... */
+static const char* OQS_CURVE_ID_NAME_STR(int id) {
+  switch(id) {
+  ///// OQS_TEMPLATE_FRAGMENT_OQS_CURVE_ID_NAME_STR_START
+  case 0x0200: return "frodo640aes";
+  case 0x0201: return "frodo640shake";
+  case 0x0202: return "frodo976aes";
+  case 0x0203: return "frodo976shake";
+  case 0x0204: return "frodo1344aes";
+  case 0x0205: return "frodo1344shake";
+  case 0x023A: return "kyber512";
+  case 0x023C: return "kyber768";
+  case 0x023D: return "kyber1024";
+  case 0x0247: return "mlkem512";
+  case 0x0248: return "mlkem768";
+  case 0x0249: return "mlkem1024";
+  case 0x0241: return "bikel1";
+  case 0x0242: return "bikel3";
+  case 0x0243: return "bikel5";
+  case 0x022C: return "hqc128";
+  case 0x022D: return "hqc192";
+  case 0x022E: return "hqc256";
+  ///// OQS_TEMPLATE_FRAGMENT_OQS_CURVE_ID_NAME_STR_END
+  ///// OQS_TEMPLATE_FRAGMENT_OQS_CURVE_ID_NAME_STR_HYBRID_START
+   case 0x2F00: return "p256_frodo640aes hybrid";
+   case 0x2F01: return "p256_frodo640shake hybrid";
+   case 0x2F02: return "p384_frodo976aes hybrid";
+   case 0x2F03: return "p384_frodo976shake hybrid";
+   case 0x2F04: return "p521_frodo1344aes hybrid";
+   case 0x2F05: return "p521_frodo1344shake hybrid";
+   case 0x2F3A: return "p256_kyber512 hybrid";
+   case 0x2F3C: return "p384_kyber768 hybrid";
+   case 0x2F3D: return "p521_kyber1024 hybrid";
+   case 0x11ec: return "X25519MLKEM768 hybrid";
+   case 0x2F41: return "p256_bikel1 hybrid";
+   case 0x2F42: return "p384_bikel3 hybrid";
+   case 0x2F43: return "p521_bikel5 hybrid";
+   case 0x2F2C: return "p256_hqc128 hybrid";
+   case 0x2F2D: return "p384_hqc192 hybrid";
+   case 0x2F2E: return "p521_hqc256 hybrid";
+  ///// OQS_TEMPLATE_FRAGMENT_OQS_CURVE_ID_NAME_STR_HYBRID_END
+  default: return "";
+  }
+}
+
 int ssl_print_tmp_key(BIO *out, SSL *s)
 {
+    /* Special case for oqs key. Instead of relying on the peer key (s->s3->peer_tmp),
+       we see if our special field is set (s->s3->tmp.oqs_kem_nid). This way, we won't
+       have to modify the EVP api to set the key type (EVP_PKEY_assign). */
     EVP_PKEY *key;
-
+    int oqs_kem_curve_id = SSL_get_oqs_kem_curve_id(s);
+    if (oqs_kem_curve_id != 0) {
+      BIO_printf(out, "Server Temp Key: %s\n", OQS_CURVE_ID_NAME_STR(oqs_kem_curve_id));
+      return 1;
+    }
+    /* ------------- end oqs */
     if (!SSL_get_peer_tmp_key(s, &key))
         return 1;
+    int nid_key = EVP_PKEY_id(key);
     BIO_puts(out, "Server Temp Key: ");
-    switch (EVP_PKEY_id(key)) {
+    switch (nid_key) {
     case EVP_PKEY_RSA:
         BIO_printf(out, "RSA, %d bits\n", EVP_PKEY_bits(key));
         break;
@@ -429,8 +532,10 @@ int ssl_print_tmp_key(BIO *out, SSL *s)
     break;
 #endif
     default:
-        BIO_printf(out, "%s, %d bits\n", OBJ_nid2sn(EVP_PKEY_id(key)),
-                   EVP_PKEY_bits(key));
+      {
+	  BIO_printf(out, "%s, %d bits\n", OBJ_nid2sn(EVP_PKEY_id(key)),
+                      EVP_PKEY_bits(key));
+      }
     }
     EVP_PKEY_free(key);
     return 1;

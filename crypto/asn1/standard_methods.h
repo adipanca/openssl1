@@ -7,6 +7,8 @@
  * https://www.openssl.org/source/license.html
  */
 
+#include <oqs/oqs.h>
+
 /*
  * This table MUST be kept in ascending order of the NID each method
  * represents (corresponding to the pkey_id field) as OBJ_bsearch
@@ -57,5 +59,29 @@ static const EVP_PKEY_ASN1_METHOD *standard_methods[] = {
 #ifndef OPENSSL_NO_SM2
     &sm2_asn1_meth,
 #endif
+///// OQS_TEMPLATE_FRAGMENT_SIG_ASN1_METHS_START
+    &dilithium2_asn1_meth,
+    &p256_dilithium2_asn1_meth,
+    &rsa3072_dilithium2_asn1_meth,
+    &dilithium3_asn1_meth,
+    &p384_dilithium3_asn1_meth,
+    &dilithium5_asn1_meth,
+    &p521_dilithium5_asn1_meth,
+    &falcon512_asn1_meth,
+    &p256_falcon512_asn1_meth,
+    &rsa3072_falcon512_asn1_meth,
+    &falcon1024_asn1_meth,
+    &p521_falcon1024_asn1_meth,
+    &sphincssha2128fsimple_asn1_meth,
+    &p256_sphincssha2128fsimple_asn1_meth,
+    &rsa3072_sphincssha2128fsimple_asn1_meth,
+    &sphincssha2128ssimple_asn1_meth,
+    &p256_sphincssha2128ssimple_asn1_meth,
+    &rsa3072_sphincssha2128ssimple_asn1_meth,
+    &sphincssha2192fsimple_asn1_meth,
+    &p384_sphincssha2192fsimple_asn1_meth,
+    &sphincsshake128fsimple_asn1_meth,
+    &p256_sphincsshake128fsimple_asn1_meth,
+    &rsa3072_sphincsshake128fsimple_asn1_meth,
+///// OQS_TEMPLATE_FRAGMENT_SIG_ASN1_METHS_END
 };
-

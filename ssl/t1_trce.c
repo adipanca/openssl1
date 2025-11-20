@@ -527,6 +527,44 @@ static const ssl_trace_tbl ssl_groups_tbl[] = {
     {258, "ffdhe4096"},
     {259, "ffdhe6144"},
     {260, "ffdhe8192"},
+    /* OQS groups, using private code points. The TLS 1.3 spec only reserves
+       FF and EC ranges for code points; we'll update our values if/when
+       this gets updated for PQC. */
+///// OQS_TEMPLATE_FRAGMENT_SSL_GROUPS_TBL_START
+    {OQS_KEM_CURVEID(NID_frodo640aes), "frodo640aes"},
+    {OQS_KEM_CURVEID(NID_frodo640shake), "frodo640shake"},
+    {OQS_KEM_CURVEID(NID_frodo976aes), "frodo976aes"},
+    {OQS_KEM_CURVEID(NID_frodo976shake), "frodo976shake"},
+    {OQS_KEM_CURVEID(NID_frodo1344aes), "frodo1344aes"},
+    {OQS_KEM_CURVEID(NID_frodo1344shake), "frodo1344shake"},
+    {OQS_KEM_CURVEID(NID_kyber512), "kyber512"},
+    {OQS_KEM_CURVEID(NID_kyber768), "kyber768"},
+    {OQS_KEM_CURVEID(NID_kyber1024), "kyber1024"},
+    {OQS_KEM_CURVEID(NID_bikel1), "bikel1"},
+    {OQS_KEM_CURVEID(NID_bikel3), "bikel3"},
+    {OQS_KEM_CURVEID(NID_bikel5), "bikel5"},
+    {OQS_KEM_CURVEID(NID_hqc128), "hqc128"},
+    {OQS_KEM_CURVEID(NID_hqc192), "hqc192"},
+    {OQS_KEM_CURVEID(NID_hqc256), "hqc256"},
+///// OQS_TEMPLATE_FRAGMENT_SSL_GROUPS_TBL_END
+///// OQS_TEMPLATE_FRAGMENT_SSL_GROUPS_TBL_HYBRID_START
+    {OQS_KEM_CURVEID(NID_p256_frodo640aes), "p256 - frodo640aes hybrid"},
+    {OQS_KEM_CURVEID(NID_p256_frodo640shake), "p256 - frodo640shake hybrid"},
+    {OQS_KEM_CURVEID(NID_p384_frodo976aes), "p384 - frodo976aes hybrid"},
+    {OQS_KEM_CURVEID(NID_p384_frodo976shake), "p384 - frodo976shake hybrid"},
+    {OQS_KEM_CURVEID(NID_p521_frodo1344aes), "p521 - frodo1344aes hybrid"},
+    {OQS_KEM_CURVEID(NID_p521_frodo1344shake), "p521 - frodo1344shake hybrid"},
+    {OQS_KEM_CURVEID(NID_p256_kyber512), "p256 - kyber512 hybrid"},
+    {OQS_KEM_CURVEID(NID_p384_kyber768), "p384 - kyber768 hybrid"},
+    {OQS_KEM_CURVEID(NID_p521_kyber1024), "p521 - kyber1024 hybrid"},
+    {OQS_KEM_CURVEID(NID_X25519MLKEM768), "X25519MLKEM768 hybrid"},
+    {OQS_KEM_CURVEID(NID_p256_bikel1), "p256 - bikel1 hybrid"},
+    {OQS_KEM_CURVEID(NID_p384_bikel3), "p384 - bikel3 hybrid"},
+    {OQS_KEM_CURVEID(NID_p521_bikel5), "p521 - bikel5 hybrid"},
+    {OQS_KEM_CURVEID(NID_p256_hqc128), "p256 - hqc128 hybrid"},
+    {OQS_KEM_CURVEID(NID_p384_hqc192), "p384 - hqc192 hybrid"},
+    {OQS_KEM_CURVEID(NID_p521_hqc256), "p521 - hqc256 hybrid"},
+///// OQS_TEMPLATE_FRAGMENT_SSL_GROUPS_TBL_HYBRID_END
     {0xFF01, "arbitrary_explicit_prime_curves"},
     {0xFF02, "arbitrary_explicit_char2_curves"}
 };
@@ -572,6 +610,31 @@ static const ssl_trace_tbl ssl_sigalg_tbl[] = {
     {TLSEXT_SIGALG_gostr34102012_256_gostr34112012_256, "gost2012_256"},
     {TLSEXT_SIGALG_gostr34102012_512_gostr34112012_512, "gost2012_512"},
     {TLSEXT_SIGALG_gostr34102001_gostr3411, "gost2001_gost94"},
+///// OQS_TEMPLATE_FRAGMENT_POPULATE_SIGALG_TBL_START
+    {TLSEXT_SIGALG_dilithium2, "dilithium2"},
+    {TLSEXT_SIGALG_p256_dilithium2, "p256_dilithium2"},
+    {TLSEXT_SIGALG_rsa3072_dilithium2, "rsa3072_dilithium2"},
+    {TLSEXT_SIGALG_dilithium3, "dilithium3"},
+    {TLSEXT_SIGALG_p384_dilithium3, "p384_dilithium3"},
+    {TLSEXT_SIGALG_dilithium5, "dilithium5"},
+    {TLSEXT_SIGALG_p521_dilithium5, "p521_dilithium5"},
+    {TLSEXT_SIGALG_falcon512, "falcon512"},
+    {TLSEXT_SIGALG_p256_falcon512, "p256_falcon512"},
+    {TLSEXT_SIGALG_rsa3072_falcon512, "rsa3072_falcon512"},
+    {TLSEXT_SIGALG_falcon1024, "falcon1024"},
+    {TLSEXT_SIGALG_p521_falcon1024, "p521_falcon1024"},
+    {TLSEXT_SIGALG_sphincssha2128fsimple, "sphincssha2128fsimple"},
+    {TLSEXT_SIGALG_p256_sphincssha2128fsimple, "p256_sphincssha2128fsimple"},
+    {TLSEXT_SIGALG_rsa3072_sphincssha2128fsimple, "rsa3072_sphincssha2128fsimple"},
+    {TLSEXT_SIGALG_sphincssha2128ssimple, "sphincssha2128ssimple"},
+    {TLSEXT_SIGALG_p256_sphincssha2128ssimple, "p256_sphincssha2128ssimple"},
+    {TLSEXT_SIGALG_rsa3072_sphincssha2128ssimple, "rsa3072_sphincssha2128ssimple"},
+    {TLSEXT_SIGALG_sphincssha2192fsimple, "sphincssha2192fsimple"},
+    {TLSEXT_SIGALG_p384_sphincssha2192fsimple, "p384_sphincssha2192fsimple"},
+    {TLSEXT_SIGALG_sphincsshake128fsimple, "sphincsshake128fsimple"},
+    {TLSEXT_SIGALG_p256_sphincsshake128fsimple, "p256_sphincsshake128fsimple"},
+    {TLSEXT_SIGALG_rsa3072_sphincsshake128fsimple, "rsa3072_sphincsshake128fsimple"},
+///// OQS_TEMPLATE_FRAGMENT_POPULATE_SIGALG_TBL_END
 };
 
 static const ssl_trace_tbl ssl_ctype_tbl[] = {

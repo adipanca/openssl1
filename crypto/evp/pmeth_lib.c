@@ -13,6 +13,7 @@
 #include <openssl/engine.h>
 #include <openssl/evp.h>
 #include <openssl/x509v3.h>
+#include <oqs/oqs.h>
 #include "crypto/asn1.h"
 #include "crypto/evp.h"
 #include "internal/numbers.h"
@@ -67,6 +68,31 @@ static const EVP_PKEY_METHOD *standard_methods[] = {
 #ifndef OPENSSL_NO_SM2
     &sm2_pkey_meth,
 #endif
+///// OQS_TEMPLATE_FRAGMENT_LIST_PKEY_METHS_START
+    &dilithium2_pkey_meth,
+    &p256_dilithium2_pkey_meth,
+    &rsa3072_dilithium2_pkey_meth,
+    &dilithium3_pkey_meth,
+    &p384_dilithium3_pkey_meth,
+    &dilithium5_pkey_meth,
+    &p521_dilithium5_pkey_meth,
+    &falcon512_pkey_meth,
+    &p256_falcon512_pkey_meth,
+    &rsa3072_falcon512_pkey_meth,
+    &falcon1024_pkey_meth,
+    &p521_falcon1024_pkey_meth,
+    &sphincssha2128fsimple_pkey_meth,
+    &p256_sphincssha2128fsimple_pkey_meth,
+    &rsa3072_sphincssha2128fsimple_pkey_meth,
+    &sphincssha2128ssimple_pkey_meth,
+    &p256_sphincssha2128ssimple_pkey_meth,
+    &rsa3072_sphincssha2128ssimple_pkey_meth,
+    &sphincssha2192fsimple_pkey_meth,
+    &p384_sphincssha2192fsimple_pkey_meth,
+    &sphincsshake128fsimple_pkey_meth,
+    &p256_sphincsshake128fsimple_pkey_meth,
+    &rsa3072_sphincsshake128fsimple_pkey_meth,
+///// OQS_TEMPLATE_FRAGMENT_LIST_PKEY_METHS_END
 };
 
 DECLARE_OBJ_BSEARCH_CMP_FN(const EVP_PKEY_METHOD *, const EVP_PKEY_METHOD *,
